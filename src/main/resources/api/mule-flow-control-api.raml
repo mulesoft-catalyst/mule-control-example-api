@@ -1,0 +1,37 @@
+#%RAML 1.0
+baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/3b9eecd7-e95a-4f20-ad65-9038c0ce599d/ # baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/3b9eecd7-e95a-4f20-ad65-9038c0ce599d
+title: mule-flow-control-api
+description: API to Stop/Start Mule Flows
+version: v1
+mediaType: application/json
+
+uses:
+  common: /common-datatypes/commonTypes.raml
+
+/flows:
+    patch:
+      body:
+        application/json:
+          type: common.FlowControlType
+          example: {
+                    "organization_id": "4333a693-0a7a-4eb2-9dcc-73fbb47fee46",
+                    "environment_id": "208ff4c0-2890-401c-abcc-6ea4fa38e483",
+                    "application_name": "test-stop-start-app",
+                    "flow_name": "demo-start-stop-flow",
+                    "action": "STOPPED"
+                  }
+         
+            
+      responses:
+        200:
+          body:
+            application/json:
+              type: common.created
+              example: !include common-datatypes/create-response.json
+                
+        400:
+          body:
+            application/json:
+              type: common.errorType
+              example: !include common-datatypes/error-response.json
+    

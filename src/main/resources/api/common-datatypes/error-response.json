@@ -1,0 +1,12 @@
+{
+    "success": false,
+    "correlationId": "0-98bfe370-296c-11e9-a23f-645aede9471b",
+    "timestamp": "2019-02-05T09:36:42.236-08:00",
+    "errorDetails": [
+        {
+            "errorCode": "api-specific-code-404",
+            "message": "api error message",
+            "additionalInfo": {}
+        }
+    ]
+}

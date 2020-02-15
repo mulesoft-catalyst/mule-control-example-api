@@ -1,0 +1,55 @@
+#%RAML 1.0 Library
+types:
+  FlowControlType:
+      type: object
+      properties:
+        organization_id: 
+          type: string
+          required: true
+        environment_id: 
+          type: string
+          required: true
+        application_name: 
+          type: string
+          required: true
+        flow_name: 
+          type: string
+          required: true
+        action: 
+          enum:
+            - STARTED
+            - STOPPED
+              
+  created:
+    type: object
+    properties: 
+      message:
+        type: string
+      correlationId: 
+        type: string
+      timestamp:
+        type: datetime  
+  errorType:
+    type: object
+    properties: 
+      success?:
+        type: boolean
+      correlationId?:
+        type: string
+      timestamp?:
+        description: timestamp of error
+        type: datetime  
+      errorDetails?:
+        type: array
+        items:
+          type: object
+          properties:
+            errorCode?:
+              type: string
+              default: "500"
+              description: Error Code
+            message?: 
+              description: "Error description"
+              default: "Internal Server Error"
+            additionalInfo?:
+              type: object

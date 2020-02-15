@@ -1,0 +1,7 @@
+{
+ "organization_id": "{{orgid}}",
+ "environment_id": "{{envid}}",
+ "application_name": "hello-world-pk1",
+ "flow_name": "hello-worldFlow",
+ "action": "STOPPED"
+} 

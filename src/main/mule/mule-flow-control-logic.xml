@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	
+		<flow name="mule-flow-control-api-main-logic" doc:id="9c9c842e-8a98-4ab9-8d11-f5ceb82b45d1" >
+		<ee:transform doc:name="Setting Variables" doc:id="f68b0934-9cf4-4c89-9c93-6302e5b8219e" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="orgid" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.'organization_id']]></ee:set-variable>
+				<ee:set-variable variableName="envid" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.'environment_id']]></ee:set-variable>
+				<ee:set-variable variableName="appname" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.'application_name']]></ee:set-variable>
+				<ee:set-variable variableName="flowname" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.'flow_name']]></ee:set-variable>
+				<ee:set-variable variableName="action" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.'action']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Get Platform Token" doc:id="d5d6dbd7-2593-4c51-860b-926e91ebb394" name="get-platform-token" target="token" targetValue="#[payload.'access_token']"/>
+		<flow-ref doc:name="Search Application" doc:id="576c9b09-e506-41ca-ad9c-4b2978c0a2df" name="find-application-by-appId" target="appInfo"/>
+		<flow-ref doc:name="Search Flow" doc:id="ab8fc6d2-1e3a-4fe7-9b1a-906055c02c7f" name="get-flows-by-appId" target="flowInfo"/>
+		<flow-ref doc:name="Update Flow Status" doc:id="50056c0c-52a5-4774-845e-2b55e25aba2b" name="update-flow-state"/>
+	</flow>
+	
+	<sub-flow name="get-platform-token" doc:id="9844cca7-3efd-4848-8b07-cedea339a5c7">
+		<ee:transform doc:name="Get Token Payload" doc:id="08b67532-a8f2-428e-9a52-8926ba7c9112">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/x-www-form-urlencoded
+---
+{
+	"client_id":Mule::p('anypoint.clientid'),
+	"client_secret": Mule::p('anypoint.secret'),
+	"grant_type": "client_credentials",
+	"scoped": "full"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:cache doc:name="Cache" doc:id="550c51c0-062c-4b0b-b0ce-c4fda5bd9c92" cachingStrategy-ref="Caching_Strategy">
+			<http:request method="POST" doc:name="Request-Get Token" doc:id="7b094096-b08e-4ced-a2e4-562f826828fd" config-ref="HTTP_Request_configuration" path="/accounts/api/v2/oauth2/token" />
+		</ee:cache>
+	</sub-flow>
+	
+	<sub-flow name="find-application-by-appId" doc:id="13d955df-0843-4287-9b04-4427ae6ea8b0">
+		<logger level="INFO" doc:name="Log AppId" doc:id="a1700e93-d304-4ddc-aabf-105d05bd597b" message="Searching app #[ vars.appname ] in deployed app" />
+		<http:request method="GET" doc:name="Request-Find Applications" doc:id="3db7e0ec-e682-4607-b396-2d86d197ee67" config-ref="HTTP_Request_configuration" path="/hybrid/api/v1/applications">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"X-ANYPNT-ORG-ID" : vars.orgid,
+	"X-ANYPNT-ENV-ID": vars.envid,
+	'Authorization' : 'bearer ' ++ vars.token
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Find App" doc:id="3b1e43cb-fc99-4c0b-83b4-799568d77ee4">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var appName = vars.appname
+var appPayload = (payload.data filter((item) -> item.name == appName))[0]
+---
+
+
+{ 	//appP: appPayload,
+	id: appPayload.id, 
+	name: appPayload.name,
+	artifactId: appPayload.artifact.id,
+	currentState: appPayload.desiredStatus,
+	fileName: appPayload.artifact.fileName
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log Found App" doc:id="89066976-9da8-490f-92de-3fa4ac54cce4" message="Found app #[payload.id]" />
+		<validation:is-true doc:name="Is false (Found app)" doc:id="262b9770-08f2-4825-bf01-935123c419db" expression="#[payload.id != null]"
+			message="#[&quot;No application found with name [ &quot; ++ (vars.jobControlPayload.'mule_app_name'  default '') ++ &quot; ]&quot;]" />
+	</sub-flow>
+	
+	
+	<sub-flow name="get-flows-by-appId" doc:id="dcb9c149-a773-43e0-9128-58dda1fe2b52">
+		<logger level="INFO" doc:name="Log AppId" doc:id="1c09b758-0046-48f7-9c2c-7956304a4dbd" message="Finding flow #[vars.flowname]" />
+		<http:request method="GET" doc:name="Request-Get-Flows" doc:id="5e17572a-1461-456d-892a-bc0c9d935c46" config-ref="HTTP_Request_configuration" path="/hybrid/api/v1/applications/{appId}/flows">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	
+	"X-ANYPNT-ORG-ID" : vars.orgid,
+	"X-ANYPNT-ENV-ID": vars.envid,
+	'Authorization' : 'bearer ' ++ vars.token
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"appId" : vars.appInfo.id
+}]]]></http:uri-params>
+		</http:request>
+		<ee:transform doc:name="Find FlowId" doc:id="32dba433-ada1-4551-8f3c-6692305f72a3">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var flowName = vars.flowname
+---
+(payload.data filter ((item) -> item.name == flowName))[0]]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log FLow Payload" doc:id="d81c62da-69ac-495e-b068-6661d33baed8" message="Flow payload #[payload.id]" />
+		<validation:is-true doc:name="Is false (Found flow?)" doc:id="02cf8b6b-72d5-49be-ba00-d576c748bb5b" expression="#[payload.id != null]"
+			message="#[&quot;No Flow found with name [ &quot; ++ (vars.jobControlPayload.'mule_flow_name'  default '') ++ &quot; ]&quot;]" />
+	</sub-flow>
+	<sub-flow name="update-flow-state" doc:id="c19e731b-f3e3-4040-a4c4-5e411ef7a46c">
+		<ee:transform doc:name="Start-Stop Payload" doc:id="226e4a70-8d04-4be9-81a4-3535f9deab96">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var stateMapping = {
+	"start" :"STARTED",
+	"stop" : "STOPPED"
+}
+var action = vars.action
+---
+{
+	"desiredStatus": vars.action
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="PATCH" doc:name="Request-PATCH-Flow-State" path="/hybrid/api/v1/applications/{appId}/flows/{flowId}" config-ref="HTTP_Request_configuration">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	
+	"X-ANYPNT-ORG-ID" : vars.orgid,
+	"X-ANYPNT-ENV-ID": vars.envid,
+	'Authorization' : 'bearer ' ++ vars.token
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"appId" : vars.appInfo.id,
+	"flowId": vars.flowInfo.id
+}]]]></http:uri-params>
+		</http:request>
+		<ee:transform doc:name="Success Update Message" doc:id="3d99d833-2b6b-4c42-bd89-c35c3d31acae">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	status: "success",
+	message: "Flow updated successfully",
+  	timestamp: now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log Response" doc:id="32d1edf0-c435-4345-9a97-5b100975e48c" message="Update Flow Response #[payload]" />
+	</sub-flow>
+	
+	
+</mule>
