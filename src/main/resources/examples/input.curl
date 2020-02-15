@@ -1,0 +1,24 @@
+curl --location --request PATCH 'http://localhost:8082/standalone-mule-flow-control-example/v1/flows' \
+--header 'Content-Type: application/json' \
+--data-raw ' {
+  "organization_id": "123123123123123123123",
+  "environment_id": "123123123123123",
+  "application_name": "hello-world-pk1",
+  "flow_name": "hello-worldFlow",
+  "action": "STOPPED"
+} '
+
+
+HTTP call
+
+PATCH /standalone-mule-flow-control-example/v1/flows HTTP/1.1
+Host: localhost:8082
+Content-Type: application/json
+
+ {
+  "organization_id": "123123123123123123123",
+  "environment_id": "13123123123123131233",
+  "application_name": "hello-world-pk1",
+  "flow_name": "hello-worldFlow",
+  "action": "STOPPED"
+}

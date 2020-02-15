@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	
+	<global-property name="mule.env" value="local" />
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="3be89174-3ca1-4cde-b220-1aea1750768f" basePath="/${api.name}/${api.version}">
+		<http:listener-connection host="${http.host}" port="${http.port}" />
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="728acbb2-2218-49d9-a33a-cd2c09d55554" file="config/global-properties.yaml" />
+	<configuration-properties doc:name="Configuration properties" doc:id="df21fc20-8475-4c56-b393-8805933365e8" file="config/${mule.env}-properties.yaml" />
+	    <apikit:config name="mule-flow-control-api-config" api="mule-flow-control-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" >
+	</apikit:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="22a220ac-9a5a-4dd7-96e5-3509ab5e0995" >
+		<http:request-connection host="${anypoint.host}" port="${anypoint.port}" protocol="HTTPS"/>
+	</http:request-config>
+	<ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy" doc:id="637fcb4e-0b88-457f-9bef-7a1927c7fa7f" keyGenerationExpression="#['bearer_token']" >
+		<os:private-object-store persistent="false" maxEntries="100" entryTtl="20" entryTtlUnit="MINUTES" expirationInterval="25" />
+	</ee:object-store-caching-strategy>
+	
+</mule>

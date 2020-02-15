@@ -1,0 +1,8 @@
+api:
+  name: "standalone-mule-flow-control-example"
+  version: "v1"
+  
+anypoint:
+  host: "anypoint.mulesoft.com"
+  port: "443"
+  
