@@ -1,0 +1,8 @@
+http:
+  host: "0.0.0.0"
+  port: "8082"
+
+anypoint:
+  clientid: "[CLIENT ID]"
+  secret: "[CLIENT SECRET]"
+  apiId: "[API APP ID]"
